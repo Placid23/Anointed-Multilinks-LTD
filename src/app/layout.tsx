@@ -7,6 +7,7 @@ import { Footer } from '@/components/layout/Footer';
 import { CartProvider } from '@/context/CartContext';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('http://localhost:9002'),
   title: 'Anointed Multilinks LTD',
   description: 'Your one-stop shop for Keke parts and accessories in Nigeria.',
   openGraph: {
