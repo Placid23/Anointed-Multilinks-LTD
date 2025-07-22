@@ -11,14 +11,28 @@ import { useState } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { ProductCard } from '@/components/product/ProductCard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useCart } from '@/context/CartContext';
+import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
 export default function ProductDetailPage({ params }: { params: { id: string } }) {
   const [quantity, setQuantity] = useState(1);
+  const { addToCart } = useCart();
+  const { toast } = useToast();
   const product = products.find((p) => p.id === params.id);
 
   if (!product) {
     notFound();
   }
+
+  const handleAddToCart = () => {
+    addToCart(product, quantity);
+    toast({
+      title: 'Added to cart',
+      description: `${quantity} x ${product.name} has been added to your cart.`,
+      action: <Button variant="link" size="sm" asChild><Link href="/cart">View Cart</Link></Button>
+    })
+  };
 
   const relatedProducts = products.filter(p => p.category === product.category && p.id !== product.id).slice(0,4);
 
@@ -73,8 +87,8 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
-             <Button size="lg" className="flex-1" disabled={product.stockStatus === 'Out of Stock'}>
-              <Plus className="mr-2 h-5 w-5" /> Add to Cart
+             <Button size="lg" className="flex-1" disabled={product.stockStatus === 'Out of Stock'} onClick={handleAddToCart}>
+              <ShoppingCart className="mr-2 h-5 w-5" /> Add to Cart
             </Button>
             <Button size="lg" variant="outline" className="flex-1">
               Buy Now
@@ -94,18 +108,22 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
       
       <Separator className="my-16" />
 
-      <Card className="bg-secondary/50 border-primary/20 border-2">
+       <Card className="bg-secondary/50 border-primary/20 border-2">
         <CardHeader>
           <CardTitle className='font-headline flex items-center gap-2'>
             <ShoppingCart />
-            Cart + Payments
+            Ready to Buy?
           </CardTitle>
           <CardDescription>
-            Enable a full-featured shopping cart and accept payments.
+            Your cart is waiting. Proceed to checkout to finalize your purchase.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button>Enable eCommerce 🔜</Button>
+          <Button asChild>
+            <Link href="/cart">
+              Go to Cart <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
         </CardContent>
       </Card>
 
@@ -122,5 +140,3 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
     </div>
   );
 }
-
-    

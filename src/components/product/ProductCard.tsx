@@ -1,6 +1,9 @@
+
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
+import { Plus, ShoppingCart } from 'lucide-react';
 
 import {
   Card,
@@ -14,12 +17,27 @@ import { Button } from '@/components/ui/button';
 import { StarRating } from './StarRating';
 import type { Product } from '@/lib/data';
 import { Badge } from '../ui/badge';
+import { useCart } from '@/context/CartContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProductCardProps {
   product: Product;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const { addToCart } = useCart();
+  const { toast } = useToast();
+
+  const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    addToCart(product);
+    toast({
+      title: 'Added to cart',
+      description: `1 x ${product.name} has been added to your cart.`,
+      action: <Button variant="link" size="sm" asChild><Link href="/cart">View Cart</Link></Button>
+    });
+  };
+
   return (
     <Card className="flex flex-col h-full overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
       <CardHeader className="p-0 relative">
@@ -51,8 +69,8 @@ export function ProductCard({ product }: ProductCardProps) {
       </CardContent>
       <CardFooter className="p-4 pt-0 flex justify-between items-center">
         <p className="text-xl font-semibold">₦{product.price.toLocaleString()}</p>
-        <Button size="sm" disabled={product.stockStatus === 'Out of Stock'}>
-          <Plus className="mr-2 h-4 w-4" /> Add to Cart
+        <Button size="sm" disabled={product.stockStatus === 'Out of Stock'} onClick={handleAddToCart}>
+          <ShoppingCart className="mr-2 h-4 w-4" /> Add to Cart
         </Button>
       </CardFooter>
     </Card>

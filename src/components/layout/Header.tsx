@@ -22,6 +22,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useCart } from '@/context/CartContext';
+import { Badge } from '../ui/badge';
 
 const mainNavLinks = [
   { href: '/', label: 'Home' },
@@ -37,6 +39,12 @@ const aiToolsLinks = [
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { cart } = useCart();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -47,6 +55,8 @@ export function Header() {
   }, []);
 
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
+
+  const cartItemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   return (
     <header
@@ -89,8 +99,13 @@ export function Header() {
           <Button variant="ghost" size="icon" aria-label="Search">
             <Search className="h-5 w-5" />
           </Button>
-          <Button variant="ghost" size="icon" aria-label="Shopping Cart">
-            <ShoppingCart className="h-5 w-5" />
+          <Button variant="ghost" size="icon" asChild aria-label="Shopping Cart">
+            <Link href="/cart" className="relative">
+              <ShoppingCart className="h-5 w-5" />
+              {isClient && cartItemCount > 0 && (
+                <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 justify-center p-0">{cartItemCount}</Badge>
+              )}
+            </Link>
           </Button>
           <Button variant="ghost" size="icon" aria-label="User Account">
             <User className="h-5 w-5" />
@@ -129,8 +144,13 @@ export function Header() {
                     <Button variant="outline" size="icon" aria-label="Search" className="w-auto flex-1">
                         <Search className="h-5 w-5 mr-2" /> Search
                     </Button>
-                    <Button variant="outline" size="icon" aria-label="Shopping Cart">
+                    <Button variant="outline" size="icon" asChild aria-label="Shopping Cart">
+                      <Link href="/cart" className="relative">
                         <ShoppingCart className="h-5 w-5" />
+                        {isClient && cartItemCount > 0 && (
+                          <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 justify-center p-0">{cartItemCount}</Badge>
+                        )}
+                      </Link>
                     </Button>
                     <Button variant="outline" size="icon" aria-label="User Account">
                         <User className="h-5 w-5" />
