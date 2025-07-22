@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { AtSign, KeyRound, Loader, LogIn, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,14 +18,16 @@ import { useToast } from '@/hooks/use-toast';
 import { login, signup } from './actions';
 import { Label } from '@/components/ui/label';
 
-export default function AuthPage() {
+function AuthForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const searchParams = useSearchParams();
-  const mode = searchParams.get('mode') || 'login';
   const router = useRouter();
+  
+  // Directly get the mode from searchParams inside the component
+  const mode = searchParams.get('mode') || 'login';
 
   const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,5 +133,14 @@ export default function AuthPage() {
         </form>
       </Card>
     </div>
+  );
+}
+
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={<div className="container mx-auto px-4 py-12 flex items-center justify-center min-h-[calc(100vh-10rem)]"><Loader className="h-8 w-8 animate-spin" /></div>}>
+      <AuthForm />
+    </Suspense>
   );
 }
