@@ -1,15 +1,15 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { products, Product } from '@/lib/data';
+import { products } from '@/lib/data';
 import { ProductCard } from '@/components/product/ProductCard';
 import { Input } from '@/components/ui/input';
-import { Search, Frown } from 'lucide-react';
+import { Search, Frown, Loader } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-export default function SearchPage() {
+function SearchComponent() {
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(searchParams.get('q') || '');
   
@@ -88,3 +88,10 @@ export default function SearchPage() {
   );
 }
 
+export default function SearchPage() {
+    return (
+        <Suspense fallback={<div className="container mx-auto px-4 py-12 flex justify-center"><Loader className="h-8 w-8 animate-spin" /></div>}>
+            <SearchComponent />
+        </Suspense>
+    )
+}
