@@ -2,7 +2,7 @@
 
 import { useState, useRef, ChangeEvent, useEffect } from 'react';
 import Image from 'next/image';
-import { ArrowRight, Camera, Loader, Search, X, Video, CameraIcon } from 'lucide-react';
+import { ArrowRight, Camera, Loader, Search, X, Video, CameraIcon, CheckCircle2 } from 'lucide-react';
 import { partsFromImage, PartsFromImageOutput } from '@/ai/flows/parts-from-image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function PartsFinderPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [suggestedParts, setSuggestedParts] = useState<string[]>([]);
+  const [analysisResult, setAnalysisResult] = useState<PartsFromImageOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -39,7 +39,7 @@ export default function PartsFinderPage() {
       const reader = new FileReader();
       reader.onloadend = () => {
         setSelectedImage(reader.result as string);
-        setSuggestedParts([]);
+        setAnalysisResult(null);
       };
       reader.readAsDataURL(file);
     }
@@ -49,9 +49,10 @@ export default function PartsFinderPage() {
     if (!selectedImage) return;
 
     setIsLoading(true);
+    setAnalysisResult(null);
     try {
       const result: PartsFromImageOutput = await partsFromImage({ photoDataUri: selectedImage });
-      setSuggestedParts(result.suggestedParts);
+      setAnalysisResult(result);
     } catch (error) {
       console.error('Error finding parts from image:', error);
       toast({
@@ -66,7 +67,7 @@ export default function PartsFinderPage() {
 
   const clearSelection = () => {
     setSelectedImage(null);
-    setSuggestedParts([]);
+    setAnalysisResult(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -129,10 +130,10 @@ export default function PartsFinderPage() {
 
   return (
     <div className="container mx-auto px-4 py-12">
-      <div className="max-w-2xl mx-auto text-center mb-12">
-        <h1 className="text-4xl font-bold font-headline tracking-tight">Image-Based Part Finder</h1>
+      <div className="max-w-3xl mx-auto text-center mb-12">
+        <h1 className="text-4xl font-bold font-headline tracking-tight">AI-Powered Part Finder</h1>
         <p className="mt-4 text-lg text-muted-foreground">
-          Have a part but don't know its name? Upload a picture or use your camera, and our AI will identify it and suggest similar parts from our store.
+          Have a part but don't know its name? Upload a picture or use your camera. Our AI will search the internet, identify the part, provide details, and suggest similar items from our store.
         </p>
       </div>
 
@@ -235,20 +236,32 @@ export default function PartsFinderPage() {
             </div>
           )}
         </CardContent>
-        {suggestedParts.length > 0 && (
-          <CardFooter className="flex flex-col items-start gap-4">
-            <h3 className="text-lg font-semibold font-headline">Suggested Parts:</h3>
-            <ul className="list-disc list-inside space-y-2 w-full">
-              {suggestedParts.map((part, index) => (
-                <li key={index} className="text-muted-foreground">{part}</li>
-              ))}
-            </ul>
-            <Button variant="outline" className="w-full">
-              <ArrowRight className="mr-2 h-4 w-4" /> Go to Store
-            </Button>
+        {analysisResult && (
+          <CardFooter className="flex flex-col items-start gap-4 pt-6 border-t">
+            <Alert variant="default" className="border-green-500 bg-green-50/50">
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <AlertTitle className="text-green-800 font-headline">Part Identified: {analysisResult.identifiedPart}</AlertTitle>
+              <AlertDescription className="text-green-700">
+                {analysisResult.description}
+              </AlertDescription>
+            </Alert>
+            
+            {analysisResult.suggestedParts && analysisResult.suggestedParts.length > 0 && (
+              <div className="w-full">
+                <h3 className="text-lg font-semibold font-headline mt-4">Suggested Parts in Our Store:</h3>
+                <ul className="list-disc list-inside space-y-2 mt-2 w-full">
+                  {analysisResult.suggestedParts.map((part, index) => (
+                    <li key={index} className="text-muted-foreground">{part}</li>
+                  ))}
+                </ul>
+                <Button variant="outline" className="w-full mt-4">
+                  <ArrowRight className="mr-2 h-4 w-4" /> Go to Store
+                </Button>
+              </div>
+            )}
           </CardFooter>
         )}
-        {isLoading && suggestedParts.length === 0 && (
+        {isLoading && !analysisResult && (
            <CardFooter>
              <Alert>
                 <Loader className="h-4 w-4 animate-spin" />
