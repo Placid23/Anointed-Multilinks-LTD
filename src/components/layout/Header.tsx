@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { Menu, Search, ShoppingCart, User, X, Bot, Camera } from 'lucide-react';
+import { Menu, Search, ShoppingCart, User, X, Bot, Camera, Bell } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Logo } from '@/components/icons/Logo';
@@ -95,10 +95,49 @@ export function Header() {
           </DropdownMenu>
         </nav>
 
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-2">
           <Button variant="ghost" size="icon" aria-label="Search">
             <Search className="h-5 w-5" />
           </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label="Notifications" className="relative">
+                <Bell className="h-5 w-5" />
+                <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 justify-center p-0 text-xs">2</Badge>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80">
+              <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="flex-col items-start gap-1">
+                <p className="font-semibold">Your order has shipped!</p>
+                <p className="text-xs text-muted-foreground">
+                  Your order #12345 has been shipped and is on its way.
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  5 minutes ago
+                </p>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="flex-col items-start gap-1">
+                <p className="font-semibold">Delivery Update</p>
+                <p className="text-xs text-muted-foreground">
+                  Your package is scheduled for delivery tomorrow.
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  1 hour ago
+                </p>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+               <DropdownMenuItem asChild>
+                  <Link href="#" className="w-full justify-center">
+                    View all notifications
+                  </Link>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Button variant="ghost" size="icon" asChild aria-label="Shopping Cart">
             <Link href="/cart" className="relative">
               <ShoppingCart className="h-5 w-5" />
