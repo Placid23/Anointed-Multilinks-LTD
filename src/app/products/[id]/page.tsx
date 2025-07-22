@@ -5,11 +5,12 @@ import Image from 'next/image';
 import { products } from '@/lib/data';
 import { StarRating } from '@/components/product/StarRating';
 import { Button } from '@/components/ui/button';
-import { Plus, Minus, Heart, Share2 } from 'lucide-react';
+import { Plus, Minus, Heart, Share2, ShoppingCart } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { ProductCard } from '@/components/product/ProductCard';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function ProductDetailPage({ params }: { params: { id: string } }) {
   const [quantity, setQuantity] = useState(1);
@@ -49,9 +50,12 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
             </div>
           </div>
 
-          <p className="text-3xl font-bold text-primary">
-            ₦{product.price.toLocaleString()}
-          </p>
+          <div>
+            <p className="text-3xl font-bold text-primary">
+              ₦{product.price.toLocaleString()}
+            </p>
+            <p className="text-xs text-muted-foreground italic mt-1">Prices subject to change; contact for confirmation.</p>
+          </div>
 
           <p className="text-muted-foreground leading-relaxed">{product.description}</p>
           
@@ -90,6 +94,23 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
       
       <Separator className="my-16" />
 
+      <Card className="bg-secondary/50 border-primary/20 border-2">
+        <CardHeader>
+          <CardTitle className='font-headline flex items-center gap-2'>
+            <ShoppingCart />
+            Cart + Payments
+          </CardTitle>
+          <CardDescription>
+            Enable a full-featured shopping cart and accept payments.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button>Enable eCommerce 🔜</Button>
+        </CardContent>
+      </Card>
+
+      <Separator className="my-16" />
+
       <div>
         <h2 className="text-3xl font-bold font-headline tracking-tight mb-8">Related Products</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -101,3 +122,5 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
     </div>
   );
 }
+
+    
