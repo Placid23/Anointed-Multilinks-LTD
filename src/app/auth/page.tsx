@@ -40,7 +40,7 @@ export default function AuthPage() {
         });
         router.push('/auth?mode=login');
       } else {
-        const { error } = await login(email, password);
+        const { data, error } = await login(email, password);
         if (error) throw error;
         toast({
           title: 'Login successful',
@@ -67,7 +67,7 @@ export default function AuthPage() {
 
   return (
     <div className="container mx-auto px-4 py-12 flex items-center justify-center min-h-[calc(100vh-10rem)]">
-      <Card className="max-w-md w-full">
+      <Card className="max-w-md w-full animate-slide-in-from-bottom">
         <form onSubmit={handleAuthAction}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">

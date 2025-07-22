@@ -7,7 +7,7 @@ import { Footer } from '@/components/layout/Footer';
 import { CartProvider } from '@/context/CartContext';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('http://localhost:9002'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002'),
   title: 'Anointed Multilinks LTD',
   description: 'Your one-stop shop for Keke parts and accessories in Nigeria.',
   openGraph: {
@@ -40,7 +40,7 @@ export default function RootLayout({
         <CartProvider>
           <div className="relative flex min-h-dvh flex-col bg-background">
             <Header />
-            <main className="flex-1">{children}</main>
+            <main className="flex-1 animate-slide-in-from-bottom">{children}</main>
             <Footer />
           </div>
           <Toaster />
