@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { Menu, Search, ShoppingCart, User, X, Bot, Camera, Bell, LogOut } from 'lucide-react';
+import { Menu, Search, ShoppingCart, User, X, Bot, Camera, Bell, LogOut, Shield } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 
 import { cn } from '@/lib/utils';
@@ -47,6 +47,7 @@ export function Header() {
   const { cart } = useCart();
   const [isClient, setIsClient] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
   const pathname = usePathname();
@@ -61,12 +62,26 @@ export function Header() {
     };
     window.addEventListener('scroll', handleScroll);
 
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setUser(data.user);
+      // Simple admin check: replace with your own logic, e.g., a roles table
+      if (data.user?.email === 'admin@example.com') {
+        setIsAdmin(true);
+      } else {
+        setIsAdmin(false);
+      }
+    };
+    checkUser();
+
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+      if (session?.user?.email === 'admin@example.com') {
+        setIsAdmin(true);
+      } else {
+        setIsAdmin(false);
+      }
     });
-
-    // Get initial user
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
@@ -91,7 +106,9 @@ export function Header() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    setIsAdmin(false);
     router.push('/');
+    router.refresh();
   };
 
 
@@ -208,8 +225,9 @@ export function Header() {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Profile</DropdownMenuItem>
-                <DropdownMenuItem>Order History</DropdownMenuItem>
+                <DropdownMenuItem asChild><Link href="/account/profile">Profile</Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link href="/account/orders">Order History</Link></DropdownMenuItem>
+                {isAdmin && <DropdownMenuItem asChild><Link href="/admin"><Shield className="mr-2 h-4 w-4" />Admin Dashboard</Link></DropdownMenuItem>}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-destructive">
                    <LogOut className="mr-2 h-4 w-4" />

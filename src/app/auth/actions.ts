@@ -4,6 +4,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { z } from 'zod';
+import { redirect } from 'next/navigation';
 
 const emailSchema = z.string().email();
 const passwordSchema = z.string().min(6, { message: 'Password must be at least 6 characters long.' });
@@ -43,8 +44,12 @@ export async function login(email: unknown, password: unknown) {
     email: emailValidation.data,
     password: passwordValidation.data,
   });
+  
+  if (error) {
+    return { data, error };
+  }
 
-  return { data, error };
+  redirect('/');
 }
 
 
@@ -82,7 +87,7 @@ export async function signup(email: unknown, password: unknown) {
     email: emailValidation.data,
     password: passwordValidation.data,
     options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/callback`,
     },
   });
 

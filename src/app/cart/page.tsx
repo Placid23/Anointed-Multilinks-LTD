@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -107,8 +108,10 @@ export default function CartPage() {
                  <p className="text-xs text-muted-foreground italic mt-1">Prices subject to change; contact for confirmation.</p>
               </CardContent>
               <CardFooter>
-                <Button className="w-full" size="lg">
-                  <CreditCard className="mr-2 h-5 w-5" /> Proceed to Checkout
+                <Button className="w-full" size="lg" asChild>
+                  <Link href="/checkout">
+                    <CreditCard className="mr-2 h-5 w-5" /> Proceed to Checkout
+                  </Link>
                 </Button>
               </CardFooter>
             </Card>
