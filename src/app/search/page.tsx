@@ -11,7 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 function SearchComponent() {
   const searchParams = useSearchParams();
-  const [query, setQuery] = useState(searchParams.get('q') || '');
+  const initialQuery = searchParams.get('q') || '';
+  const [query, setQuery] = useState(initialQuery);
   
   const filteredProducts = useMemo(() => {
     if (!query) {
@@ -27,9 +28,10 @@ function SearchComponent() {
     );
   }, [query]);
 
+  // Update query state if the URL search param changes
   useEffect(() => {
-    setQuery(searchParams.get('q') || '');
-  }, [searchParams]);
+    setQuery(initialQuery);
+  }, [initialQuery]);
 
   return (
     <div className="container mx-auto px-4 py-12">
