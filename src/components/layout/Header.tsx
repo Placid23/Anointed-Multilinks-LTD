@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { Menu, Search, ShoppingCart, User, X, Bot, Camera, Bell, LogOut, Shield } from 'lucide-react';
+import { Menu, Search, ShoppingCart, User, X, Bot, Camera, Bell, LogOut, Shield, CheckCheck } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 
 import { cn } from '@/lib/utils';
@@ -41,6 +41,15 @@ const aiToolsLinks = [
   { href: '/parts-finder', label: 'Image Part Finder', icon: Camera },
 ];
 
+interface Notification {
+  id: string;
+  created_at: string;
+  title: string;
+  description: string | null;
+  is_read: boolean;
+  link_href: string | null;
+}
+
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -49,6 +58,7 @@ export function Header() {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -65,22 +75,13 @@ export function Header() {
     const checkUser = async () => {
       const { data } = await supabase.auth.getUser();
       setUser(data.user);
-      // Simple admin check: replace with your own logic, e.g., a roles table
-      if (data.user?.email === 'admin@example.com') {
-        setIsAdmin(true);
-      } else {
-        setIsAdmin(false);
-      }
+      setIsAdmin(data.user?.email === 'admin@example.com');
     };
     checkUser();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
-      if (session?.user?.email === 'admin@example.com') {
-        setIsAdmin(true);
-      } else {
-        setIsAdmin(false);
-      }
+      setIsAdmin(session?.user?.email === 'admin@example.com');
     });
 
     return () => {
@@ -88,9 +89,62 @@ export function Header() {
       authListener.subscription.unsubscribe();
     };
   }, []);
-  
+
   useEffect(() => {
-    // Clear search query when navigating away from the search page
+    if (user) {
+      fetchNotifications();
+      const channel = supabase
+        .channel('realtime-notifications')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
+          (payload) => {
+            fetchNotifications();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    } else {
+      setNotifications([]);
+    }
+  }, [user]);
+  
+  const fetchNotifications = async () => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching notifications:', error);
+    } else {
+      setNotifications(data);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    if (!user) return;
+    const unreadIds = notifications.filter(n => !n.is_read).map(n => n.id);
+    if (unreadIds.length === 0) return;
+
+    const { error } = await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .in('id', unreadIds);
+    
+    if (error) {
+      console.error('Error marking notifications as read:', error);
+    } else {
+      setNotifications(notifications.map(n => ({...n, is_read: true})));
+    }
+  };
+
+  useEffect(() => {
     if (pathname !== '/search' && searchQuery) {
       setSearchQuery('');
     }
@@ -111,10 +165,10 @@ export function Header() {
     router.refresh();
   };
 
-
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
   const cartItemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+  const unreadNotificationCount = notifications.filter(n => !n.is_read).length;
 
   return (
     <header
@@ -168,43 +222,44 @@ export function Header() {
         </nav>
 
         <div className="hidden md:flex items-center gap-1">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Notifications" className="relative">
-                <Bell className="h-5 w-5" />
-                <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 justify-center p-0 text-xs">2</Badge>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
-              <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="flex-col items-start gap-1">
-                <p className="font-semibold">Your order has shipped!</p>
-                <p className="text-xs text-muted-foreground">
-                  Your order #12345 has been shipped and is on its way.
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  5 minutes ago
-                </p>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="flex-col items-start gap-1">
-                <p className="font-semibold">Delivery Update</p>
-                <p className="text-xs text-muted-foreground">
-                  Your package is scheduled for delivery tomorrow.
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  1 hour ago
-                </p>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-               <DropdownMenuItem asChild>
-                  <Link href="#" className="w-full justify-center">
-                    View all notifications
-                  </Link>
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {user && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Notifications" className="relative">
+                  <Bell className="h-5 w-5" />
+                  {isClient && unreadNotificationCount > 0 && (
+                    <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 justify-center p-0 text-xs">{unreadNotificationCount}</Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80">
+                <DropdownMenuLabel className="flex justify-between items-center">
+                  <span>Notifications</span>
+                  {unreadNotificationCount > 0 && (
+                    <Button variant="link" size="sm" className="p-0 h-auto" onClick={markAllAsRead}>
+                      Mark all as read
+                    </Button>
+                  )}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {notifications.length > 0 ? (
+                  notifications.map(notification => (
+                    <DropdownMenuItem key={notification.id} asChild className="flex-col items-start gap-1 data-[read=true]:text-muted-foreground" data-read={notification.is_read}>
+                      <Link href={notification.link_href || '#'} className="w-full">
+                        <p className="font-semibold">{notification.title}</p>
+                        <p className="text-xs">{notification.description}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(notification.created_at).toLocaleString()}
+                        </p>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))
+                ) : (
+                  <p className="p-4 text-sm text-muted-foreground text-center">No new notifications.</p>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
           <Button variant="ghost" size="icon" asChild aria-label="Shopping Cart">
             <Link href="/cart" className="relative">
