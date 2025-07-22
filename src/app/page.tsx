@@ -1,3 +1,6 @@
+
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -9,6 +12,7 @@ import {
   Truck,
   Wrench,
 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 
 import { products, testimonials } from '@/lib/data';
 import { Button } from '@/components/ui/button';
@@ -22,11 +26,53 @@ import {
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ProductCard } from '@/components/product/ProductCard';
+import { cn } from '@/lib/utils';
+
+const AnimatedSection = ({ children, className }: { children: React.ReactNode, className?: string }) => {
+    const ref = useRef<HTMLDivElement>(null);
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    setIsVisible(true);
+                    observer.unobserve(ref.current!);
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        if (ref.current) {
+            observer.observe(ref.current);
+        }
+
+        return () => {
+            if (ref.current) {
+                observer.unobserve(ref.current);
+            }
+        };
+    }, []);
+
+    return (
+        <section
+            ref={ref}
+            className={cn(
+                "transition-all duration-700 ease-out",
+                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10",
+                className
+            )}
+        >
+            {children}
+        </section>
+    );
+};
+
 
 export default function Home() {
   return (
     <div className="flex flex-col">
-      <section className="relative w-full h-[60vh] md:h-[80vh] bg-cover bg-center"
+      <section className="relative w-full h-[60vh] md:h-[80vh] bg-cover bg-center animate-slide-in-from-bottom"
         style={{ backgroundImage: "url('https://placehold.co/1600x900.png')" }}
         data-ai-hint="keke taxi"
       >
@@ -46,7 +92,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-12 md:py-24 bg-secondary/50">
+      <AnimatedSection className="py-12 md:py-24 bg-secondary/50">
         <div className="container mx-auto px-4">
           <div className="text-center">
             <h2 className="text-3xl font-bold font-headline tracking-tight">Why Choose Us?</h2>
@@ -90,9 +136,9 @@ export default function Home() {
             </Card>
           </div>
         </div>
-      </section>
+      </AnimatedSection>
 
-      <section className="py-12 md:py-24">
+      <AnimatedSection className="py-12 md:py-24">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl font-bold font-headline tracking-tight">Featured Products</h2>
@@ -108,9 +154,9 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </section>
+      </AnimatedSection>
       
-      <section className="py-12 md:py-24 bg-secondary/50">
+      <AnimatedSection className="py-12 md:py-24 bg-secondary/50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold font-headline tracking-tight">AI-Powered Assistance</h2>
@@ -163,9 +209,9 @@ export default function Home() {
             </Card>
           </div>
         </div>
-      </section>
+      </AnimatedSection>
 
-      <section className="py-12 md:py-24">
+      <AnimatedSection className="py-12 md:py-24">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold font-headline tracking-tight">What Our Customers Say</h2>
@@ -193,7 +239,7 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </section>
+      </AnimatedSection>
     </div>
   );
 }
