@@ -1,8 +1,10 @@
+
 'use client';
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { Menu, Search, ShoppingCart, User, X, Bot, Camera, Bell } from 'lucide-react';
+import { Menu, Search, ShoppingCart, User, X, Bot, Camera, Bell, LogOut } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
 
 import { cn } from '@/lib/utils';
 import { Logo } from '@/components/icons/Logo';
@@ -24,6 +26,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useCart } from '@/context/CartContext';
 import { Badge } from '../ui/badge';
+import { supabase } from '@/lib/supabase';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
+import { Input } from '../ui/input';
 
 const mainNavLinks = [
   { href: '/', label: 'Home' },
@@ -41,6 +46,10 @@ export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { cart } = useCart();
   const [isClient, setIsClient] = useState(false);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     setIsClient(true);
@@ -51,8 +60,40 @@ export function Header() {
       setIsScrolled(window.scrollY > 10);
     };
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Get initial user
+    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      authListener.subscription.unsubscribe();
+    };
   }, []);
+  
+  useEffect(() => {
+    // Clear search query when navigating away from the search page
+    if (pathname !== '/search' && searchQuery) {
+      setSearchQuery('');
+    }
+  }, [pathname, searchQuery]);
+
+  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    router.push('/');
+  };
+
 
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
@@ -65,14 +106,28 @@ export function Header() {
         isScrolled ? 'bg-background/80 shadow-md backdrop-blur-sm' : 'bg-transparent'
       )}
     >
-      <div className="container mx-auto flex h-20 items-center justify-between px-4">
-        <Link href="/" aria-label="Homepage">
+      <div className="container mx-auto flex h-20 items-center justify-between px-4 gap-2">
+        <Link href="/" aria-label="Homepage" className="flex-shrink-0">
           <Logo />
         </Link>
+        
+        <div className="flex-1 max-w-md hidden md:flex">
+          <form onSubmit={handleSearchSubmit} className="w-full relative">
+            <Input
+              type="search"
+              placeholder="Search for parts..."
+              className="w-full pr-10"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => router.push('/search')}
+            />
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+          </form>
+        </div>
 
         <nav className="hidden md:flex items-center gap-6">
           {mainNavLinks.map((link) => (
-            <Link key={link.href} href={link.href} className="text-sm font-medium hover:text-primary transition-colors">
+            <Link key={link.href} href={link.href} className="text-sm font-medium hover:text-primary transition-colors flex-shrink-0">
               {link.label}
             </Link>
           ))}
@@ -95,11 +150,7 @@ export function Header() {
           </DropdownMenu>
         </nav>
 
-        <div className="hidden md:flex items-center gap-2">
-          <Button variant="ghost" size="icon" aria-label="Search">
-            <Search className="h-5 w-5" />
-          </Button>
-
+        <div className="hidden md:flex items-center gap-1">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" aria-label="Notifications" className="relative">
@@ -146,12 +197,42 @@ export function Header() {
               )}
             </Link>
           </Button>
-          <Button variant="ghost" size="icon" aria-label="User Account">
-            <User className="h-5 w-5" />
-          </Button>
+          
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="User Account">
+                  <User className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>Profile</DropdownMenuItem>
+                <DropdownMenuItem>Order History</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+                   <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+             <Button variant="ghost" size="sm" asChild>
+                <Link href="/auth">Login</Link>
+            </Button>
+          )}
         </div>
 
-        <div className="md:hidden">
+        <div className="md:hidden flex items-center">
+            <Button variant="ghost" size="icon" asChild aria-label="Shopping Cart">
+              <Link href="/cart" className="relative">
+                <ShoppingCart className="h-5 w-5" />
+                {isClient && cartItemCount > 0 && (
+                  <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 justify-center p-0">{cartItemCount}</Badge>
+                )}
+              </Link>
+            </Button>
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" aria-label="Open menu">
@@ -165,6 +246,16 @@ export function Header() {
                 </SheetTitle>
               </SheetHeader>
               <div className="mt-8 flex flex-col gap-4">
+                 <form onSubmit={handleSearchSubmit} className="w-full relative">
+                    <Input
+                      type="search"
+                      placeholder="Search for parts..."
+                      className="w-full pr-10"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  </form>
                 {mainNavLinks.map((link) => (
                   <Link key={link.href} href={link.href} onClick={closeMobileMenu} className="text-lg font-medium hover:text-primary transition-colors">
                     {link.label}
@@ -179,21 +270,20 @@ export function Header() {
                     </Link>
                   ))}
                 </div>
-                 <div className="border-t pt-6 mt-4 flex items-center gap-4">
-                    <Button variant="outline" size="icon" aria-label="Search" className="w-auto flex-1">
-                        <Search className="h-5 w-5 mr-2" /> Search
-                    </Button>
-                    <Button variant="outline" size="icon" asChild aria-label="Shopping Cart">
-                      <Link href="/cart" className="relative">
-                        <ShoppingCart className="h-5 w-5" />
-                        {isClient && cartItemCount > 0 && (
-                          <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 justify-center p-0">{cartItemCount}</Badge>
-                        )}
-                      </Link>
-                    </Button>
-                    <Button variant="outline" size="icon" aria-label="User Account">
-                        <User className="h-5 w-5" />
-                    </Button>
+                 <div className="border-t pt-6 mt-4 flex items-center justify-between">
+                    {user ? (
+                       <div className='w-full'>
+                         <p className="text-sm text-muted-foreground">{user.email}</p>
+                         <Button onClick={() => { handleLogout(); closeMobileMenu(); }} variant="outline" className='w-full mt-2'>
+                           <LogOut className="mr-2 h-4 w-4" />
+                           Logout
+                         </Button>
+                       </div>
+                    ) : (
+                      <Button onClick={closeMobileMenu} asChild className='w-full'>
+                        <Link href="/auth">Login / Sign Up</Link>
+                      </Button>
+                    )}
                 </div>
               </div>
             </SheetContent>
