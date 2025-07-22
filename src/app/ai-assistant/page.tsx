@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Bot, Send, Loader, User, CornerDownLeft } from 'lucide-react';
+import { Cog, Send, Loader, User, CornerDownLeft } from 'lucide-react';
 import { conversationalPartsAssistant } from '@/ai/flows/conversational-parts-assistant';
 import { Button } from '@/components/ui/button';
 import {
@@ -76,7 +76,7 @@ export default function AiAssistantPage() {
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-headline">
-            <Bot className="h-6 w-6 text-primary" />
+            <Cog className="h-6 w-6 text-primary" />
             Chat with our AI Expert
           </CardTitle>
           <CardDescription>
@@ -97,7 +97,7 @@ export default function AiAssistantPage() {
                   {message.sender === 'ai' && (
                     <Avatar className="h-8 w-8">
                       <AvatarFallback className="bg-primary text-primary-foreground">
-                        <Bot className="h-5 w-5" />
+                        <Cog className="h-5 w-5" />
                       </AvatarFallback>
                     </Avatar>
                   )}
@@ -124,7 +124,7 @@ export default function AiAssistantPage() {
                 <div className="flex items-start gap-3 justify-start">
                   <Avatar className="h-8 w-8">
                       <AvatarFallback className="bg-primary text-primary-foreground">
-                        <Bot className="h-5 w-5" />
+                        <Cog className="h-5 w-5" />
                       </AvatarFallback>
                     </Avatar>
                   <div className="rounded-lg px-4 py-3 max-w-sm bg-muted flex items-center">
