@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import type { User } from '@supabase/supabase-js';
 import { Loader } from 'lucide-react';
-import { createOrder } from './actions';
+import { sendOrderToProcessingApp } from './actions';
 
 export default function CheckoutPage() {
   const { cart, cartTotal, clearCart } = useCart();
@@ -58,7 +58,7 @@ export default function CheckoutPage() {
     setIsLoading(true);
 
     try {
-        const result = await createOrder({
+        const result = await sendOrderToProcessingApp({
             cart,
             totalAmount: cartTotal,
             shippingAddress: address
@@ -70,10 +70,11 @@ export default function CheckoutPage() {
 
         toast({
             title: 'Order Placed!',
-            description: `Your order #${result.orderId?.substring(0, 8)} has been placed successfully.`,
+            description: `Your order has been sent for processing successfully.`,
         });
         clearCart();
-        router.push(`/account/orders/${result.orderId}`);
+        // Since the order is processed externally, we redirect to a generic success page or the main orders page.
+        router.push(`/account/orders`);
 
     } catch (error: any) {
         toast({
@@ -133,7 +134,7 @@ export default function CheckoutPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Order Summary</CardTitle>
-              </CardHeader>
+              </Header>
               <CardContent className="space-y-4">
                 {cart.map(item => (
                   <div key={item.id} className="flex justify-between items-center text-sm">
@@ -156,6 +157,3 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
