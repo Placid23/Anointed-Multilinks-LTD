@@ -12,14 +12,14 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import type { User } from '@supabase/supabase-js';
 import { Loader } from 'lucide-react';
-import { sendOrderToProcessingApp } from './actions';
+import { createOrder } from './actions';
 
 export default function CheckoutPage() {
   const { cart, cartTotal, clearCart } = useCart();
   const router = useRouter();
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [address, setAddress] = useState({
     street: '',
     city: '',
@@ -29,6 +29,7 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     const checkUser = async () => {
+      setIsLoading(true);
       const { data } = await supabase.auth.getUser();
       if (!data.user) {
         toast({
@@ -40,6 +41,7 @@ export default function CheckoutPage() {
       } else {
         setUser(data.user);
       }
+      setIsLoading(false);
     };
     checkUser();
   }, [router, toast]);
@@ -55,13 +57,18 @@ export default function CheckoutPage() {
         toast({ title: 'Your cart is empty', variant: 'destructive' });
         return;
     }
+    if(!user) {
+        toast({ title: 'You must be logged in to place an order.', variant: 'destructive' });
+        return;
+    }
     setIsLoading(true);
 
     try {
-        const result = await sendOrderToProcessingApp({
+        const result = await createOrder({
             cart,
             totalAmount: cartTotal,
-            shippingAddress: address
+            shippingAddress: address,
+            user,
         });
 
         if (result.error) {
@@ -70,11 +77,10 @@ export default function CheckoutPage() {
 
         toast({
             title: 'Order Placed!',
-            description: `Your order has been sent for processing successfully.`,
+            description: `Your order #${result.order.id.substring(0,8)} has been placed successfully.`,
         });
         clearCart();
-        // Since the order is processed externally, we redirect to a generic success page or the main orders page.
-        router.push(`/account/orders`);
+        router.push(`/account/orders/${result.order.id}`);
 
     } catch (error: any) {
         toast({
@@ -87,19 +93,19 @@ export default function CheckoutPage() {
     }
   };
   
-  if (!user) {
+  if (isLoading || !user) {
     return (
-        <div className="container mx-auto px-4 py-12 flex items-center justify-center">
+        <div className="container mx-auto px-4 py-12 flex items-center justify-center min-h-[50vh]">
             <Loader className="animate-spin h-8 w-8" />
         </div>
     )
   }
 
   return (
-    <div className="container mx-auto px-4 py-12">
+    <div className="container mx-auto px-4 py-12 animate-slide-in-from-bottom">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-4xl font-bold font-headline tracking-tight mb-8">Checkout</h1>
-        <div className="grid md:grid-cols-2 gap-12">
+        <div className="grid md:grid-cols-2 gap-12 items-start">
           <div>
             <Card>
               <CardHeader>
@@ -131,7 +137,7 @@ export default function CheckoutPage() {
             </Card>
           </div>
           <div>
-            <Card>
+            <Card className="sticky top-24">
               <CardHeader>
                 <CardTitle>Order Summary</CardTitle>
               </Header>
@@ -156,4 +162,3 @@ export default function CheckoutPage() {
             </Card>
           </div>
         </div>
-      </div>
