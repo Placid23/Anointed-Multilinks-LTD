@@ -48,8 +48,8 @@ function AuthForm() {
           title: 'Login successful',
           description: 'Welcome back!',
         });
-        router.push('/');
-        router.refresh();
+        // Force a full page reload to ensure the new session is recognized everywhere.
+        window.location.href = '/';
       }
     } catch (error: any) {
       toast({
